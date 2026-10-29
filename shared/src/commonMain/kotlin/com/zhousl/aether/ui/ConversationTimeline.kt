@@ -218,7 +218,9 @@ fun ConversationTimeline(
                             dragOffset += dragAmount
                             dragDistancePx = maxOf(dragDistancePx, dragOffset.getDistance())
                             finalPointer = change.position
-                            if (dragDistancePx >= movementThresholdPx && railSize.height > 0) {
+                            // The press starts on the current turn, so selection can follow the
+                            // finger right away instead of waiting out the tap threshold.
+                            if (railSize.height > 0) {
                                 selectedIndex = indexAtRootY(pointerInRoot.y)
                             }
                             pressed = change.pressed
@@ -231,10 +233,12 @@ fun ConversationTimeline(
                             pointer.x <= railSize.width + exitTolerancePx &&
                             pointer.y >= -exitTolerancePx &&
                             pointer.y <= railSize.height + exitTolerancePx
-                        val shouldNavigate = !cancelled &&
-                            dragDistancePx >= movementThresholdPx &&
-                            stayedNearRail
                         val destination = selectedIndex
+                        // A plain tap stays put; moving to another turn navigates even when the
+                        // drag is shorter than the tap threshold (turns are only ~11dp apart).
+                        val shouldNavigate = !cancelled &&
+                            stayedNearRail &&
+                            (destination != anchorIndex || dragDistancePx >= movementThresholdPx)
                         navigating = false
                         selectedIndex = safeCurrentIndex
                         if (shouldNavigate) latestOnNavigate(destination)
