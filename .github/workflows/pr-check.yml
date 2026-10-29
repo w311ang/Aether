@@ -125,11 +125,13 @@ jobs:
           cache: npm
           cache-dependency-path: pi-bridge/package-lock.json
 
+      # Writable so later pushes to the same PR reuse dependencies and task outputs; a fork has
+      # no default-branch builds to seed a read-only cache.
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-provider: enhanced
-          cache-read-only: true
+          cache-read-only: false
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
@@ -139,11 +141,10 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x ./gradlew
 
-      - name: Test shared and Android code
-        run: ./gradlew :shared:testDebugUnitTest :app:testDebugUnitTest --stacktrace
-
+      # The APK is built and uploaded before the tests so it can be installed while they run;
+      # a test failure still fails the job.
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+        run: ./gradlew :app:assembleDebug --build-cache --parallel --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
@@ -152,6 +153,9 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 7
           archive: false
+
+      - name: Test shared and Android code
+        run: ./gradlew :shared:testDebugUnitTest :app:testDebugUnitTest --build-cache --parallel --stacktrace
 
   ios:
     needs: changes

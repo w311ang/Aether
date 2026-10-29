@@ -152,6 +152,7 @@ import com.zhousl.aether.data.AutomaticModelPurpose
 import com.zhousl.aether.data.ChatUsageStatisticsSnapshot
 import com.zhousl.aether.data.AppLanguage
 import com.zhousl.aether.data.AppThemeMode
+import com.zhousl.aether.data.TimelineTurnSpacingOptionsDp
 import com.zhousl.aether.data.LlmProviderConfig
 import com.zhousl.aether.data.PiProviderCatalog
 import com.zhousl.aether.data.LocalRuntimeId
@@ -416,6 +417,7 @@ fun SettingsScreen(
     onCancelVirtualDisplayAuthorization: () -> Unit,
     language: AppLanguage,
     themeMode: AppThemeMode,
+    timelineTurnSpacingDp: Int,
     defaultChatModelKey: String,
     defaultTitleModelKey: String,
     defaultNamingModelKey: String,
@@ -462,6 +464,7 @@ fun SettingsScreen(
     onSaveAgentModeAuthorization: (Boolean, AgentModeAuthorizationMethod) -> Unit,
     onUpdateLanguage: (AppLanguage) -> Unit,
     onUpdateThemeMode: (AppThemeMode) -> Unit,
+    onUpdateTimelineTurnSpacing: (Int) -> Unit,
     onUpsertProviderConfig: (LlmProviderConfig) -> Unit,
     onRemoveProviderConfig: (String) -> Unit,
     onSetProviderEnabled: (String, Boolean) -> Unit,
@@ -749,6 +752,8 @@ fun SettingsScreen(
                     onUpdateThemeMode(it)
                     persistSettings()
                 },
+                selectedTimelineTurnSpacingDp = timelineTurnSpacingDp,
+                onTimelineTurnSpacingSelected = onUpdateTimelineTurnSpacing,
                 onBack = { currentPage = SettingsPage.Hub.name },
             )
 
@@ -2213,6 +2218,8 @@ private fun GeneralSettingsPageV2(
     onLanguageSelected: (AppLanguage) -> Unit,
     selectedThemeMode: AppThemeMode,
     onThemeModeSelected: (AppThemeMode) -> Unit,
+    selectedTimelineTurnSpacingDp: Int,
+    onTimelineTurnSpacingSelected: (Int) -> Unit,
     onBack: () -> Unit,
 ) {
     SubPageScaffold(title = stringResource(R.string.settings_general), onBack = onBack) {
@@ -2251,8 +2258,37 @@ private fun GeneralSettingsPageV2(
                 },
             )
         }
+
+        Spacer(Modifier.height(16.dp))
+
+        SettingsCardGroup {
+            SelectionDropdownField(
+                label = stringResource(R.string.settings_timeline_spacing),
+                supportingText = stringResource(R.string.settings_timeline_spacing_description),
+                selectedLabel = timelineTurnSpacingDisplayName(selectedTimelineTurnSpacingDp),
+                options = TimelineTurnSpacingOptionsDp.map { option ->
+                    SelectionOption(
+                        key = option.toString(),
+                        title = timelineTurnSpacingDisplayName(option),
+                        subtitle = "$option dp",
+                        selected = option == selectedTimelineTurnSpacingDp,
+                        onClick = { onTimelineTurnSpacingSelected(option) },
+                    )
+                },
+            )
+        }
     }
 }
+
+@Composable
+private fun timelineTurnSpacingDisplayName(spacingDp: Int): String = stringResource(
+    when (spacingDp) {
+        TimelineTurnSpacingOptionsDp[0] -> R.string.timeline_spacing_compact
+        TimelineTurnSpacingOptionsDp[2] -> R.string.timeline_spacing_relaxed
+        TimelineTurnSpacingOptionsDp[3] -> R.string.timeline_spacing_wide
+        else -> R.string.timeline_spacing_standard
+    }
+)
 
 @Composable
 private fun TermuxEnvironmentVariablesSection(

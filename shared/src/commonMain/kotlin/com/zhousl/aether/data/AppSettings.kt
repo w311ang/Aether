@@ -105,6 +105,13 @@ enum class AppLanguage(
 }
 
 @Serializable
+/** Gap between conversation-timeline marks while expanded, in dp (compact, standard, relaxed, wide). */
+val TimelineTurnSpacingOptionsDp = listOf(4, 8, 12, 16)
+const val DefaultTimelineTurnSpacingDp = 8
+
+fun normalizeTimelineTurnSpacingDp(value: Int?): Int =
+    value?.takeIf { it in TimelineTurnSpacingOptionsDp } ?: DefaultTimelineTurnSpacingDp
+
 enum class AppThemeMode(
     val storageValue: String,
 ) {
@@ -212,6 +219,7 @@ data class AppSettings(
     val agentModeDisplayOrientation: AgentModeDisplayOrientation = AgentModeDisplayOrientation.Device,
     val language: AppLanguage = defaultAppLanguage(),
     val themeMode: AppThemeMode = AppThemeMode.System,
+    val timelineTurnSpacingDp: Int = DefaultTimelineTurnSpacingDp,
     val defaultChatModelKey: String = "",
     val defaultTitleModelKey: String = "",
     val defaultNamingModelKey: String = "",

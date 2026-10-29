@@ -1091,4 +1091,26 @@
     <string name="settings_extension_phase_refreshing">正在刷新已安装扩展…</string>
     <string name="settings_extension_operation_elapsed">已用时 %1$d 秒。较大的软件包可能需要几分钟。</string>
     <string name="provider_form_service_tier">速度档位（service_tier；留空使用默认，如 fast / ultrafast）</string>
+    <string name="session_preview_activity_label">用 Aether 预览</string>
+    <string name="session_preview_title">对话预览</string>
+    <string name="session_preview_subtitle">只读 · %1$d 条消息 · %2$s</string>
+    <string name="session_preview_save">保存到聊天</string>
+    <string name="session_preview_open_saved">打开聊天</string>
+    <string name="session_preview_saved">已保存到聊天列表</string>
+    <string name="session_preview_save_failed">保存失败：%1$s</string>
+    <string name="session_preview_no_file">没有收到文件。</string>
+    <string name="session_preview_read_failed">无法读取文件：%1$s</string>
+    <string name="session_preview_unsupported">只能预览从 Aether 导出的单个聊天。此文件的 exportType 为“%1$s”。</string>
+    <string name="session_preview_invalid">这不是有效的 Aether 聊天导出文件。</string>
+    <string name="session_preview_action_unavailable">预览中不可用</string>
+    <string name="session_preview_folder_access_needed">发送方传来的是文件路径。授权一次“%1$s”文件夹，以后这个文件夹里的聊天都能直接打开。</string>
+    <string name="session_preview_grant_folder">授权这个文件夹</string>
+    <string name="session_preview_pick_file">只打开这个文件</string>
+    <string name="session_preview_folder_not_covering">所选文件夹不包含这个文件。</string>
+    <string name="settings_timeline_spacing">时间轴间距</string>
+    <string name="settings_timeline_spacing_description">按住对话时间轴展开后，相邻两轮之间的间距。</string>
+    <string name="timeline_spacing_compact">紧凑</string>
+    <string name="timeline_spacing_standard">标准</string>
+    <string name="timeline_spacing_relaxed">宽松</string>
+    <string name="timeline_spacing_wide">很宽</string>
 </resources>

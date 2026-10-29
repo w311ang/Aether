@@ -2113,4 +2113,26 @@
     <string name="settings_extension_phase_reloading">Перезагрузка расширений…</string>
     <string name="settings_extension_phase_refreshing">Обновление списка расширений…</string>
     <string name="settings_extension_operation_elapsed">Прошло: %1$d с. Установка больших пакетов может занять несколько минут.</string>
+    <string name="session_preview_activity_label">Просмотр в Aether</string>
+    <string name="session_preview_title">Просмотр чата</string>
+    <string name="session_preview_subtitle">Только чтение · сообщений: %1$d · %2$s</string>
+    <string name="session_preview_save">Сохранить в чаты</string>
+    <string name="session_preview_open_saved">Открыть чат</string>
+    <string name="session_preview_saved">Сохранено в чаты</string>
+    <string name="session_preview_save_failed">Не удалось сохранить: %1$s</string>
+    <string name="session_preview_no_file">Файл не передан.</string>
+    <string name="session_preview_read_failed">Не удалось прочитать файл: %1$s</string>
+    <string name="session_preview_unsupported">Можно просматривать только отдельные чаты, экспортированные из Aether. exportType этого файла: «%1$s».</string>
+    <string name="session_preview_invalid">Этот файл не является корректным экспортом чата Aether.</string>
+    <string name="session_preview_action_unavailable">Недоступно в режиме просмотра</string>
+    <string name="session_preview_folder_access_needed">Приложение передало путь к файлу. Один раз предоставьте доступ к папке «%1$s», и чаты из неё будут открываться сразу.</string>
+    <string name="session_preview_grant_folder">Дать доступ к папке</string>
+    <string name="session_preview_pick_file">Выбрать этот файл</string>
+    <string name="session_preview_folder_not_covering">Выбранная папка не содержит этот файл.</string>
+    <string name="settings_timeline_spacing">Интервал шкалы</string>
+    <string name="settings_timeline_spacing_description">Расстояние между репликами, когда вы удерживаете шкалу беседы.</string>
+    <string name="timeline_spacing_compact">Плотно</string>
+    <string name="timeline_spacing_standard">Стандартно</string>
+    <string name="timeline_spacing_relaxed">Свободно</string>
+    <string name="timeline_spacing_wide">Широко</string>
 </resources>

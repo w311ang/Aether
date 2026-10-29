@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +50,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.zhousl.aether.platform.LocalReduceMotion
@@ -71,11 +73,20 @@ private val TimelineCompactTouchHeight = 56.dp
 private val TimelineMovementThreshold = 18.dp
 private val TimelineExitTolerance = 28.dp
 
+// Expanded turns keep a fixed pitch and never compress; a ladder taller than the window scrolls
+// when the finger rests near either edge, faster the closer it gets.
+private val TimelineMaxWindowHeight = 420.dp
+private val TimelineEdgeScrollZone = 40.dp
+private val TimelineEdgeScrollMaxSpeed = 600.dp // per second
+private val TimelineFadeHeight = 24.dp
+
 @Composable
 fun ConversationTimeline(
     entries: List<ConversationTimelineEntry>,
     currentIndex: Int,
     modifier: Modifier = Modifier,
+    /** Gap between neighbouring marks while expanded (AppSettings.timelineTurnSpacingDp). */
+    turnSpacing: Dp = TimelineBarGap,
     onNavigate: (Int) -> Unit,
 ) {
     if (entries.size < 2) return
@@ -92,19 +103,19 @@ fun ConversationTimeline(
     var finalPointer by remember { mutableStateOf<Offset?>(null) }
     var railSize by remember { mutableStateOf(IntSize.Zero) }
     var previewHeightPx by remember { mutableIntStateOf(0) }
+    // Expanded layout: turn i sits at firstTurnY + i * pitch (root coordinates).
+    var firstTurnY by remember { mutableFloatStateOf(0f) }
+    var pressFirstTurnY by remember { mutableFloatStateOf(0f) }
+    var pressedIndex by remember(entries) { mutableIntStateOf(safeCurrentIndex) }
+    var pointerYInRoot by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(safeCurrentIndex, navigating) {
         if (!navigating) selectedIndex = safeCurrentIndex
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val naturalNavigationHeight = TimelineVerticalPadding * 2 +
-            TimelineBarHeight * entries.size +
-            TimelineBarGap * (entries.size - 1)
-        val navigationHeight = naturalNavigationHeight
-            .coerceAtLeast(TimelineCompactTouchHeight)
-            .coerceAtMost(maxHeight)
-        val targetRailHeight = if (navigating) navigationHeight else TimelineCompactTouchHeight
+        // Expanded, the rail spans the whole area so every turn can be placed relative to the press.
+        val targetRailHeight = if (navigating) maxHeight else TimelineCompactTouchHeight
         val animatedRailHeight by animateDpAsState(
             targetValue = targetRailHeight,
             animationSpec = tween(
@@ -152,26 +163,82 @@ fun ConversationTimeline(
         val exitTolerancePx = with(density) { TimelineExitTolerance.toPx() }
         val verticalPaddingPx = with(density) { TimelineVerticalPadding.toPx() }
         val barHeightPx = with(density) { TimelineBarHeight.toPx() }
+        val rootHeightPx = constraints.maxHeight.toFloat()
+        val pitchPx = with(density) { (TimelineBarHeight + turnSpacing).toPx() }
+        val windowHeightPx = minOf(
+            rootHeightPx - verticalPaddingPx * 2,
+            with(density) { TimelineMaxWindowHeight.toPx() },
+        ).coerceAtLeast(0f)
+        val windowTopPx = (rootHeightPx - windowHeightPx) / 2f
+        val windowBottomPx = windowTopPx + windowHeightPx
+        val firstTurnRange = timelineFirstTurnRange(
+            count = entries.size,
+            pitch = pitchPx,
+            top = windowTopPx + verticalPaddingPx,
+            bottom = windowBottomPx - verticalPaddingPx,
+        )
+        val edgeZonePx = with(density) { TimelineEdgeScrollZone.toPx() }
+        val edgeSpeedPx = with(density) { TimelineEdgeScrollMaxSpeed.toPx() }
+        val fadeHeightPx = with(density) { TimelineFadeHeight.toPx() }
 
+        fun expandedCenterInRoot(index: Int): Float = firstTurnY + index * pitchPx
+
+        fun indexAtRootY(positionY: Float): Int =
+            timelineIndexAt(positionY, firstTurnY, pitchPx, entries.size)
+
+        // Keeps scrolling while the finger rests near an edge, not only when it moves.
+        LaunchedEffect(navigating, rootHeightPx, entries.size, pitchPx) {
+            if (!navigating) return@LaunchedEffect
+            var previousNanos = withFrameNanos { it }
+            while (true) {
+                val nowNanos = withFrameNanos { it }
+                val seconds = (nowNanos - previousNanos) / 1_000_000_000f
+                previousNanos = nowNanos
+                val speed = timelineEdgeScrollSpeed(
+                    positionY = pointerYInRoot,
+                    top = windowTopPx,
+                    bottom = windowBottomPx,
+                    edgeZone = edgeZonePx,
+                    maxSpeed = edgeSpeedPx,
+                )
+                if (speed == 0f) continue
+                // Scrolling may reveal hidden turns but never pushes the ladder past where the
+                // press placed it, which can leave blank space near the first or last turn.
+                val scrollRange = minOf(firstTurnRange.start, pressFirstTurnY)..
+                    maxOf(firstTurnRange.endInclusive, pressFirstTurnY)
+                val next = (firstTurnY - speed * seconds).coerceIn(scrollRange)
+                if (next != firstTurnY) {
+                    firstTurnY = next
+                    selectedIndex = indexAtRootY(pointerYInRoot)
+                }
+            }
+        }
+
+        // Centered vertically, so the rail grows evenly up and down from the pressed spot.
         Canvas(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
+                .align(Alignment.CenterEnd)
                 .width(TimelineRailWidth)
                 .height(animatedRailHeight)
                 .onSizeChanged { railSize = it }
-                .pointerInput(entries.size, safeCurrentIndex) {
+                .pointerInput(entries.size, safeCurrentIndex, constraints.maxHeight, pitchPx) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         down.consume()
+                        var pointerInRoot = Offset(
+                            x = down.position.x,
+                            y = down.position.y + (constraints.maxHeight - railSize.height) / 2f,
+                        )
+                        // The current turn always expands exactly where the finger pressed.
+                        pressedIndex = safeCurrentIndex
+                        pointerYInRoot = pointerInRoot.y
+                        firstTurnY = pointerInRoot.y - safeCurrentIndex * pitchPx
+                        pressFirstTurnY = firstTurnY
                         navigating = true
                         selectedIndex = safeCurrentIndex
                         dragDistancePx = 0f
                         dragOffset = Offset.Zero
                         finalPointer = down.position
-                        var pointerInRoot = Offset(
-                            x = down.position.x,
-                            y = down.position.y + constraints.maxHeight - railSize.height,
-                        )
 
                         val pointerId = down.id
                         var cancelled = false
@@ -185,21 +252,18 @@ fun ConversationTimeline(
                             }
                             val nextPointerInRoot = Offset(
                                 x = change.position.x,
-                                y = change.position.y + constraints.maxHeight - railSize.height,
+                                y = change.position.y + (constraints.maxHeight - railSize.height) / 2f,
                             )
                             val dragAmount = nextPointerInRoot - pointerInRoot
                             pointerInRoot = nextPointerInRoot
                             dragOffset += dragAmount
                             dragDistancePx = maxOf(dragDistancePx, dragOffset.getDistance())
                             finalPointer = change.position
-                            if (dragDistancePx >= movementThresholdPx && railSize.height > 0) {
-                                selectedIndex = timelineIndexForPosition(
-                                    positionY = change.position.y,
-                                    height = railSize.height.toFloat(),
-                                    count = entries.size,
-                                    verticalPadding = verticalPaddingPx,
-                                    barHeight = barHeightPx,
-                                )
+                            // The press starts on the current turn, so selection can follow the
+                            // finger right away instead of waiting out the tap threshold.
+                            pointerYInRoot = pointerInRoot.y
+                            if (railSize.height > 0) {
+                                selectedIndex = indexAtRootY(pointerInRoot.y)
                             }
                             pressed = change.pressed
                             change.consume()
@@ -211,10 +275,12 @@ fun ConversationTimeline(
                             pointer.x <= railSize.width + exitTolerancePx &&
                             pointer.y >= -exitTolerancePx &&
                             pointer.y <= railSize.height + exitTolerancePx
-                        val shouldNavigate = !cancelled &&
-                            dragDistancePx >= movementThresholdPx &&
-                            stayedNearRail
                         val destination = selectedIndex
+                        // A plain tap stays put; moving to another turn navigates even when the
+                        // drag is shorter than the tap threshold (turns are only ~11dp apart).
+                        val shouldNavigate = !cancelled &&
+                            stayedNearRail &&
+                            (destination != pressedIndex || dragDistancePx >= movementThresholdPx)
                         navigating = false
                         selectedIndex = safeCurrentIndex
                         if (shouldNavigate) latestOnNavigate(destination)
@@ -222,27 +288,22 @@ fun ConversationTimeline(
                 },
         ) {
             val compactCount = entries.size.coerceAtMost(4)
-            val compactTop = size.height - with(density) {
-                (
-                    TimelineVerticalPadding +
-                        TimelineBarHeight * compactCount +
-                        TimelineBarGap * (compactCount - 1)
-                    ).toPx()
+            val compactBlockHeightPx = with(density) {
+                (TimelineBarHeight * compactCount + TimelineBarGap * (compactCount - 1)).toPx()
             }
+            // Keep the collapsed bars at the rail's center so they don't slide while it expands.
+            val compactTop = (size.height - compactBlockHeightPx) / 2f
             val compactStep = barHeightPx + with(density) { TimelineBarGap.toPx() }
-            val navigationTop = verticalPaddingPx
-            val navigationSpace = (size.height - verticalPaddingPx * 2 - barHeightPx).coerceAtLeast(0f)
-            val navigationStep = if (entries.size > 1) {
-                navigationSpace / (entries.size - 1)
-            } else {
-                0f
-            }
+            val canvasTopInRoot = (rootHeightPx - size.height) / 2f
             val endX = size.width - with(density) { 11.dp.toPx() }
+            // Fade an end only while more turns are hidden past it.
+            val moreAbove = firstTurnY < windowTopPx
+            val moreBelow = firstTurnY + (entries.size - 1) * pitchPx > windowBottomPx
 
             entries.indices.forEach { index ->
                 val collapsedSlot = index - compactWindowPosition.value
                 val collapsedY = compactTop + collapsedSlot * compactStep + barHeightPx / 2f
-                val expandedY = navigationTop + index * navigationStep + barHeightPx / 2f
+                val expandedY = expandedCenterInRoot(index) - canvasTopInRoot
                 val y = lerp(
                     Offset(0f, collapsedY),
                     Offset(0f, expandedY),
@@ -258,7 +319,15 @@ fun ConversationTimeline(
                 val navigationColor = navigationTimelineBarColor(distance, isDarkTheme)
                 val color = lerp(compactColor, navigationColor, expansionFraction)
                 val collapsedAlpha = compactTimelineSlotAlpha(collapsedSlot, compactCount)
-                val alpha = collapsedAlpha + (1f - collapsedAlpha) * expansionFraction
+                val expandedAlpha = timelineWindowAlpha(
+                    positionY = expandedY + canvasTopInRoot,
+                    top = windowTopPx,
+                    bottom = windowBottomPx,
+                    fadeHeight = fadeHeightPx,
+                    fadeTop = moreAbove,
+                    fadeBottom = moreBelow,
+                )
+                val alpha = collapsedAlpha + (expandedAlpha - collapsedAlpha) * expansionFraction
 
                 drawLine(
                     color = color.copy(alpha = color.alpha * alpha),
@@ -271,16 +340,7 @@ fun ConversationTimeline(
         }
 
         val previewEntry = entries[selectedIndex.coerceIn(entries.indices)]
-        val navigationHeightPx = with(density) { navigationHeight.toPx() }
-        val rootHeightPx = constraints.maxHeight.toFloat()
-        val selectedCenterInRail = timelinePositionForIndex(
-            index = selectedIndex,
-            height = navigationHeightPx,
-            count = entries.size,
-            verticalPadding = verticalPaddingPx,
-            barHeight = barHeightPx,
-        )
-        val selectedCenterInRoot = rootHeightPx - navigationHeightPx + selectedCenterInRail
+        val selectedCenterInRoot = expandedCenterInRoot(selectedIndex.coerceIn(entries.indices))
         val previewTopPx = (selectedCenterInRoot - previewHeightPx / 2f)
             .coerceIn(0f, (rootHeightPx - previewHeightPx).coerceAtLeast(0f))
         val previewBackground = if (isDarkTheme) Color(0xFF2C2C2E) else Color(0xFFF0F0F2)
@@ -358,30 +418,66 @@ private fun compactTimelineSlotAlpha(slot: Float, visibleCount: Int): Float {
     }.coerceIn(0f, 1f)
 }
 
-internal fun timelineIndexForPosition(
-    positionY: Float,
-    height: Float,
+/**
+ * Allowed positions of the first turn when turns sit [pitch] apart between [top] and [bottom]:
+ * a ladder that fits stays entirely inside, a taller one may scroll until either end reaches
+ * its edge.
+ */
+internal fun timelineFirstTurnRange(
     count: Int,
-    verticalPadding: Float,
-    barHeight: Float,
-): Int {
-    if (count <= 1) return 0
-    val usableHeight = (height - verticalPadding * 2 - barHeight).coerceAtLeast(1f)
-    val normalized = ((positionY - verticalPadding - barHeight / 2f) / usableHeight)
-        .coerceIn(0f, 1f)
-    return (normalized * (count - 1)).roundToInt().coerceIn(0, count - 1)
+    pitch: Float,
+    top: Float,
+    bottom: Float,
+): ClosedFloatingPointRange<Float> {
+    val ladderHeight = (count - 1).coerceAtLeast(0) * pitch
+    val lastAtBottom = bottom - ladderHeight
+    return minOf(top, lastAtBottom)..maxOf(top, lastAtBottom)
 }
 
-private fun timelinePositionForIndex(
-    index: Int,
-    height: Float,
+/** The turn whose mark is nearest to [positionY]. */
+internal fun timelineIndexAt(
+    positionY: Float,
+    firstTurnY: Float,
+    pitch: Float,
     count: Int,
-    verticalPadding: Float,
-    barHeight: Float,
+): Int {
+    if (count <= 1 || pitch <= 0f) return 0
+    return ((positionY - firstTurnY) / pitch).roundToInt().coerceIn(0, count - 1)
+}
+
+/**
+ * Edge scrolling speed (px/s, negative = towards earlier turns) for a finger at [positionY]:
+ * zero away from the edges, ramping to [maxSpeed] at the window edge and beyond.
+ */
+internal fun timelineEdgeScrollSpeed(
+    positionY: Float,
+    top: Float,
+    bottom: Float,
+    edgeZone: Float,
+    maxSpeed: Float,
 ): Float {
-    if (count <= 1) return height / 2f
-    val usableHeight = (height - verticalPadding * 2 - barHeight).coerceAtLeast(0f)
-    return verticalPadding + barHeight / 2f + usableHeight * index.coerceIn(0, count - 1) / (count - 1)
+    if (edgeZone <= 0f) return 0f
+    return when {
+        positionY < top + edgeZone -> -maxSpeed * ((top + edgeZone - positionY) / edgeZone).coerceIn(0f, 1f)
+        positionY > bottom - edgeZone -> maxSpeed * ((positionY - (bottom - edgeZone)) / edgeZone).coerceIn(0f, 1f)
+        else -> 0f
+    }
+}
+
+/** Opacity of an expanded mark: hidden outside the window, faded near an end that can scroll. */
+internal fun timelineWindowAlpha(
+    positionY: Float,
+    top: Float,
+    bottom: Float,
+    fadeHeight: Float,
+    fadeTop: Boolean,
+    fadeBottom: Boolean,
+): Float {
+    if (positionY < top || positionY > bottom) return 0f
+    var alpha = 1f
+    if (fadeTop && fadeHeight > 0f) alpha = minOf(alpha, (positionY - top) / fadeHeight)
+    if (fadeBottom && fadeHeight > 0f) alpha = minOf(alpha, (bottom - positionY) / fadeHeight)
+    return alpha.coerceIn(0f, 1f)
 }
 
 private fun compactTimelineBarWidth(distance: Float): Float = when {
