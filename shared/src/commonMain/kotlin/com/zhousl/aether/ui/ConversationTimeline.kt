@@ -92,19 +92,17 @@ fun ConversationTimeline(
     var finalPointer by remember { mutableStateOf<Offset?>(null) }
     var railSize by remember { mutableStateOf(IntSize.Zero) }
     var previewHeightPx by remember { mutableIntStateOf(0) }
+    // The expanded rail is laid out around the press: anchorIndex sits at anchorYInRoot.
+    var anchorIndex by remember(entries) { mutableIntStateOf(safeCurrentIndex) }
+    var anchorYInRoot by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(safeCurrentIndex, navigating) {
         if (!navigating) selectedIndex = safeCurrentIndex
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val naturalNavigationHeight = TimelineVerticalPadding * 2 +
-            TimelineBarHeight * entries.size +
-            TimelineBarGap * (entries.size - 1)
-        val navigationHeight = naturalNavigationHeight
-            .coerceAtLeast(TimelineCompactTouchHeight)
-            .coerceAtMost(maxHeight)
-        val targetRailHeight = if (navigating) navigationHeight else TimelineCompactTouchHeight
+        // Expanded, the rail spans the whole area so every turn can be placed relative to the press.
+        val targetRailHeight = if (navigating) maxHeight else TimelineCompactTouchHeight
         val animatedRailHeight by animateDpAsState(
             targetValue = targetRailHeight,
             animationSpec = tween(
@@ -152,6 +150,30 @@ fun ConversationTimeline(
         val exitTolerancePx = with(density) { TimelineExitTolerance.toPx() }
         val verticalPaddingPx = with(density) { TimelineVerticalPadding.toPx() }
         val barHeightPx = with(density) { TimelineBarHeight.toPx() }
+        val rootHeightPx = constraints.maxHeight.toFloat()
+        val naturalStepPx = with(density) { (TimelineBarHeight + TimelineBarGap).toPx() }
+        val expandedTopPx = verticalPaddingPx + barHeightPx / 2f
+        val expandedBottomPx = rootHeightPx - verticalPaddingPx - barHeightPx / 2f
+
+        fun expandedCenterInRoot(index: Int): Float = anchoredTimelinePosition(
+            index = index,
+            count = entries.size,
+            anchorIndex = anchorIndex,
+            anchorY = anchorYInRoot,
+            top = expandedTopPx,
+            bottom = expandedBottomPx,
+            naturalStep = naturalStepPx,
+        )
+
+        fun indexAtRootY(positionY: Float): Int = anchoredTimelineIndexForPosition(
+            positionY = positionY,
+            count = entries.size,
+            anchorIndex = anchorIndex,
+            anchorY = anchorYInRoot,
+            top = expandedTopPx,
+            bottom = expandedBottomPx,
+            naturalStep = naturalStepPx,
+        )
 
         // Centered vertically, so the rail grows evenly up and down from the pressed spot.
         Canvas(
@@ -160,19 +182,22 @@ fun ConversationTimeline(
                 .width(TimelineRailWidth)
                 .height(animatedRailHeight)
                 .onSizeChanged { railSize = it }
-                .pointerInput(entries.size, safeCurrentIndex) {
+                .pointerInput(entries.size, safeCurrentIndex, constraints.maxHeight) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         down.consume()
+                        var pointerInRoot = Offset(
+                            x = down.position.x,
+                            y = down.position.y + (constraints.maxHeight - railSize.height) / 2f,
+                        )
+                        // The current turn expands to exactly where the finger pressed.
+                        anchorIndex = safeCurrentIndex
+                        anchorYInRoot = pointerInRoot.y
                         navigating = true
                         selectedIndex = safeCurrentIndex
                         dragDistancePx = 0f
                         dragOffset = Offset.Zero
                         finalPointer = down.position
-                        var pointerInRoot = Offset(
-                            x = down.position.x,
-                            y = down.position.y + (constraints.maxHeight - railSize.height) / 2f,
-                        )
 
                         val pointerId = down.id
                         var cancelled = false
@@ -194,13 +219,7 @@ fun ConversationTimeline(
                             dragDistancePx = maxOf(dragDistancePx, dragOffset.getDistance())
                             finalPointer = change.position
                             if (dragDistancePx >= movementThresholdPx && railSize.height > 0) {
-                                selectedIndex = timelineIndexForPosition(
-                                    positionY = change.position.y,
-                                    height = railSize.height.toFloat(),
-                                    count = entries.size,
-                                    verticalPadding = verticalPaddingPx,
-                                    barHeight = barHeightPx,
-                                )
+                                selectedIndex = indexAtRootY(pointerInRoot.y)
                             }
                             pressed = change.pressed
                             change.consume()
@@ -229,19 +248,13 @@ fun ConversationTimeline(
             // Keep the collapsed bars at the rail's center so they don't slide while it expands.
             val compactTop = (size.height - compactBlockHeightPx) / 2f
             val compactStep = barHeightPx + with(density) { TimelineBarGap.toPx() }
-            val navigationTop = verticalPaddingPx
-            val navigationSpace = (size.height - verticalPaddingPx * 2 - barHeightPx).coerceAtLeast(0f)
-            val navigationStep = if (entries.size > 1) {
-                navigationSpace / (entries.size - 1)
-            } else {
-                0f
-            }
+            val canvasTopInRoot = (rootHeightPx - size.height) / 2f
             val endX = size.width - with(density) { 11.dp.toPx() }
 
             entries.indices.forEach { index ->
                 val collapsedSlot = index - compactWindowPosition.value
                 val collapsedY = compactTop + collapsedSlot * compactStep + barHeightPx / 2f
-                val expandedY = navigationTop + index * navigationStep + barHeightPx / 2f
+                val expandedY = expandedCenterInRoot(index) - canvasTopInRoot
                 val y = lerp(
                     Offset(0f, collapsedY),
                     Offset(0f, expandedY),
@@ -270,16 +283,7 @@ fun ConversationTimeline(
         }
 
         val previewEntry = entries[selectedIndex.coerceIn(entries.indices)]
-        val navigationHeightPx = with(density) { navigationHeight.toPx() }
-        val rootHeightPx = constraints.maxHeight.toFloat()
-        val selectedCenterInRail = timelinePositionForIndex(
-            index = selectedIndex,
-            height = navigationHeightPx,
-            count = entries.size,
-            verticalPadding = verticalPaddingPx,
-            barHeight = barHeightPx,
-        )
-        val selectedCenterInRoot = (rootHeightPx - navigationHeightPx) / 2f + selectedCenterInRail
+        val selectedCenterInRoot = expandedCenterInRoot(selectedIndex.coerceIn(entries.indices))
         val previewTopPx = (selectedCenterInRoot - previewHeightPx / 2f)
             .coerceIn(0f, (rootHeightPx - previewHeightPx).coerceAtLeast(0f))
         val previewBackground = if (isDarkTheme) Color(0xFF2C2C2E) else Color(0xFFF0F0F2)
@@ -357,30 +361,64 @@ private fun compactTimelineSlotAlpha(slot: Float, visibleCount: Int): Float {
     }.coerceIn(0f, 1f)
 }
 
-internal fun timelineIndexForPosition(
-    positionY: Float,
-    height: Float,
+/**
+ * Expanded layout anchored at the press: [anchorIndex] sits exactly at [anchorY] (clamped to
+ * [top]..[bottom]). Turns above and below keep [naturalStep] spacing while they fit and are
+ * compressed evenly otherwise, so every turn stays reachable between [top] and [bottom].
+ */
+private class AnchoredTimelineLayout(
     count: Int,
-    verticalPadding: Float,
-    barHeight: Float,
-): Int {
-    if (count <= 1) return 0
-    val usableHeight = (height - verticalPadding * 2 - barHeight).coerceAtLeast(1f)
-    val normalized = ((positionY - verticalPadding - barHeight / 2f) / usableHeight)
-        .coerceIn(0f, 1f)
-    return (normalized * (count - 1)).roundToInt().coerceIn(0, count - 1)
+    private val anchorIndex: Int,
+    anchorY: Float,
+    top: Float,
+    bottom: Float,
+    naturalStep: Float,
+) {
+    val anchor = anchorY.coerceIn(top, maxOf(top, bottom))
+    val stepAbove = if (anchorIndex > 0) minOf(naturalStep, (anchor - top) / anchorIndex) else naturalStep
+    val stepBelow = (count - 1 - anchorIndex).let { below ->
+        if (below > 0) minOf(naturalStep, (maxOf(top, bottom) - anchor) / below) else naturalStep
+    }
+
+    fun position(index: Int): Float = when {
+        index < anchorIndex -> anchor - (anchorIndex - index) * stepAbove
+        else -> anchor + (index - anchorIndex) * stepBelow
+    }
 }
 
-private fun timelinePositionForIndex(
+internal fun anchoredTimelinePosition(
     index: Int,
-    height: Float,
     count: Int,
-    verticalPadding: Float,
-    barHeight: Float,
+    anchorIndex: Int,
+    anchorY: Float,
+    top: Float,
+    bottom: Float,
+    naturalStep: Float,
 ): Float {
-    if (count <= 1) return height / 2f
-    val usableHeight = (height - verticalPadding * 2 - barHeight).coerceAtLeast(0f)
-    return verticalPadding + barHeight / 2f + usableHeight * index.coerceIn(0, count - 1) / (count - 1)
+    if (count <= 0) return anchorY
+    val safeAnchor = anchorIndex.coerceIn(0, count - 1)
+    return AnchoredTimelineLayout(count, safeAnchor, anchorY, top, bottom, naturalStep)
+        .position(index.coerceIn(0, count - 1))
+}
+
+internal fun anchoredTimelineIndexForPosition(
+    positionY: Float,
+    count: Int,
+    anchorIndex: Int,
+    anchorY: Float,
+    top: Float,
+    bottom: Float,
+    naturalStep: Float,
+): Int {
+    if (count <= 1) return 0
+    val safeAnchor = anchorIndex.coerceIn(0, count - 1)
+    val layout = AnchoredTimelineLayout(count, safeAnchor, anchorY, top, bottom, naturalStep)
+    val index = if (positionY <= layout.anchor) {
+        if (layout.stepAbove <= 0f) safeAnchor else safeAnchor - ((layout.anchor - positionY) / layout.stepAbove).roundToInt()
+    } else {
+        if (layout.stepBelow <= 0f) safeAnchor else safeAnchor + ((positionY - layout.anchor) / layout.stepBelow).roundToInt()
+    }
+    return index.coerceIn(0, count - 1)
 }
 
 private fun compactTimelineBarWidth(distance: Float): Float = when {
