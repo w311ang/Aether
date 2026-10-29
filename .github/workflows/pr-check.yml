@@ -141,11 +141,10 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x ./gradlew
 
-      - name: Test shared and Android code
-        run: ./gradlew :shared:testDebugUnitTest :app:testDebugUnitTest --build-cache --stacktrace
-
+      # The APK is built and uploaded before the tests so it can be installed while they run;
+      # a test failure still fails the job.
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --build-cache --stacktrace
+        run: ./gradlew :app:assembleDebug --build-cache --parallel --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
@@ -154,6 +153,9 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 7
           archive: false
+
+      - name: Test shared and Android code
+        run: ./gradlew :shared:testDebugUnitTest :app:testDebugUnitTest --build-cache --parallel --stacktrace
 
   ios:
     needs: changes
