@@ -153,9 +153,10 @@ fun ConversationTimeline(
         val verticalPaddingPx = with(density) { TimelineVerticalPadding.toPx() }
         val barHeightPx = with(density) { TimelineBarHeight.toPx() }
 
+        // Centered vertically, so the rail grows evenly up and down from the pressed spot.
         Canvas(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
+                .align(Alignment.CenterEnd)
                 .width(TimelineRailWidth)
                 .height(animatedRailHeight)
                 .onSizeChanged { railSize = it }
@@ -170,7 +171,7 @@ fun ConversationTimeline(
                         finalPointer = down.position
                         var pointerInRoot = Offset(
                             x = down.position.x,
-                            y = down.position.y + constraints.maxHeight - railSize.height,
+                            y = down.position.y + (constraints.maxHeight - railSize.height) / 2f,
                         )
 
                         val pointerId = down.id
@@ -185,7 +186,7 @@ fun ConversationTimeline(
                             }
                             val nextPointerInRoot = Offset(
                                 x = change.position.x,
-                                y = change.position.y + constraints.maxHeight - railSize.height,
+                                y = change.position.y + (constraints.maxHeight - railSize.height) / 2f,
                             )
                             val dragAmount = nextPointerInRoot - pointerInRoot
                             pointerInRoot = nextPointerInRoot
@@ -222,13 +223,11 @@ fun ConversationTimeline(
                 },
         ) {
             val compactCount = entries.size.coerceAtMost(4)
-            val compactTop = size.height - with(density) {
-                (
-                    TimelineVerticalPadding +
-                        TimelineBarHeight * compactCount +
-                        TimelineBarGap * (compactCount - 1)
-                    ).toPx()
+            val compactBlockHeightPx = with(density) {
+                (TimelineBarHeight * compactCount + TimelineBarGap * (compactCount - 1)).toPx()
             }
+            // Keep the collapsed bars at the rail's center so they don't slide while it expands.
+            val compactTop = (size.height - compactBlockHeightPx) / 2f
             val compactStep = barHeightPx + with(density) { TimelineBarGap.toPx() }
             val navigationTop = verticalPaddingPx
             val navigationSpace = (size.height - verticalPaddingPx * 2 - barHeightPx).coerceAtLeast(0f)
@@ -280,7 +279,7 @@ fun ConversationTimeline(
             verticalPadding = verticalPaddingPx,
             barHeight = barHeightPx,
         )
-        val selectedCenterInRoot = rootHeightPx - navigationHeightPx + selectedCenterInRail
+        val selectedCenterInRoot = (rootHeightPx - navigationHeightPx) / 2f + selectedCenterInRail
         val previewTopPx = (selectedCenterInRoot - previewHeightPx / 2f)
             .coerceIn(0f, (rootHeightPx - previewHeightPx).coerceAtLeast(0f))
         val previewBackground = if (isDarkTheme) Color(0xFF2C2C2E) else Color(0xFFF0F0F2)
