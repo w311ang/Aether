@@ -203,7 +203,7 @@ import kotlin.math.roundToInt
 import org.json.JSONObject
 import java.util.Locale
 
-private sealed interface ConversationListItem {
+internal sealed interface ConversationListItem {
     val key: String
 
     data class Message(
@@ -395,23 +395,7 @@ fun ConversationScreen(
     val timelineTargets = remember(conversationItems) {
         buildConversationTimelineTargets(conversationItems)
     }
-    val currentTimelineIndex by remember(listState, timelineTargets) {
-        derivedStateOf {
-            if (timelineTargets.isEmpty()) {
-                0
-            } else {
-                val layout = listState.layoutInfo
-                val firstVisibleIndex = layout.visibleItemsInfo.firstOrNull()?.index ?: 0
-                val probe = layout.viewportStartOffset +
-                    (layout.viewportEndOffset - layout.viewportStartOffset) * 0.28f
-                timelineTargets.indexOfLast { target ->
-                    target.listItemIndex < firstVisibleIndex ||
-                        layout.visibleItemsInfo.firstOrNull { it.index == target.listItemIndex }
-                            ?.let { it.offset <= probe } == true
-                }.coerceAtLeast(0)
-            }
-        }
-    }
+    val currentTimelineIndex = rememberConversationTimelineIndex(listState, timelineTargets)
     val compactSuggestion = remember(messages) { compactCommandSuggestion(messages) }
     val sessionTotalTokens = remember(messages) {
         messages.sumOf { message -> message.usageStatistics?.totalTokens ?: 0L }
@@ -1925,7 +1909,7 @@ internal fun runningWorkDurationMillis(
         (nowRealtimeMillis - fallbackStartedRealtimeMillis).coerceAtLeast(1_000L)
     }
 
-private fun buildConversationListItems(
+internal fun buildConversationListItems(
     messages: List<ChatMessage>,
 ): List<ConversationListItem> = buildList {
     var index = 0
@@ -1982,12 +1966,12 @@ private fun buildConversationListItems(
     }
 }
 
-private data class ConversationTimelineTarget(
+internal data class ConversationTimelineTarget(
     val listItemIndex: Int,
     val entry: ConversationTimelineEntry,
 )
 
-private fun buildConversationTimelineTargets(
+internal fun buildConversationTimelineTargets(
     items: List<ConversationListItem>,
 ): List<ConversationTimelineTarget> = buildList {
     items.forEachIndexed { itemIndex, item ->
@@ -2036,6 +2020,31 @@ private fun buildConversationTimelineTargets(
     }
 }
 
+@Composable
+internal fun rememberConversationTimelineIndex(
+    listState: LazyListState,
+    timelineTargets: List<ConversationTimelineTarget>,
+): Int {
+    val currentTimelineIndex by remember(listState, timelineTargets) {
+        derivedStateOf {
+            if (timelineTargets.isEmpty()) {
+                0
+            } else {
+                val layout = listState.layoutInfo
+                val firstVisibleIndex = layout.visibleItemsInfo.firstOrNull()?.index ?: 0
+                val probe = layout.viewportStartOffset +
+                    (layout.viewportEndOffset - layout.viewportStartOffset) * 0.28f
+                timelineTargets.indexOfLast { target ->
+                    target.listItemIndex < firstVisibleIndex ||
+                        layout.visibleItemsInfo.firstOrNull { it.index == target.listItemIndex }
+                            ?.let { it.offset <= probe } == true
+                }.coerceAtLeast(0)
+            }
+        }
+    }
+    return currentTimelineIndex
+}
+
 private data class CompactCommandSuggestion(
     val percent: Int?,
 )
@@ -2060,7 +2069,7 @@ private fun compactCommandSuggestion(messages: List<ChatMessage>): CompactComman
 }
 
 @Composable
-private fun CompactStatusDivider(
+internal fun CompactStatusDivider(
     text: String,
     isRunning: Boolean = false,
 ) {

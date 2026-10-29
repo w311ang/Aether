@@ -65,6 +65,33 @@
             </intent-filter>
         </activity>
 
+        <!-- Read-only preview of an exported chat (exportType "session") opened from another app. -->
+        <activity
+            android:name=".SessionPreviewActivity"
+            android:exported="true"
+            android:label="@string/session_preview_activity_label"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.Aether">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="application/json" />
+                <data android:mimeType="text/json" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="application/json" />
+                <data android:mimeType="text/json" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".termux.TermuxResultReceiver"
             android:exported="false" />

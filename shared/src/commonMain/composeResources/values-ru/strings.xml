@@ -2113,4 +2113,16 @@
     <string name="settings_extension_phase_reloading">Перезагрузка расширений…</string>
     <string name="settings_extension_phase_refreshing">Обновление списка расширений…</string>
     <string name="settings_extension_operation_elapsed">Прошло: %1$d с. Установка больших пакетов может занять несколько минут.</string>
+    <string name="session_preview_activity_label">Просмотр в Aether</string>
+    <string name="session_preview_title">Просмотр чата</string>
+    <string name="session_preview_subtitle">Только чтение · сообщений: %1$d · %2$s</string>
+    <string name="session_preview_save">Сохранить в чаты</string>
+    <string name="session_preview_open_saved">Открыть чат</string>
+    <string name="session_preview_saved">Сохранено в чаты</string>
+    <string name="session_preview_save_failed">Не удалось сохранить: %1$s</string>
+    <string name="session_preview_no_file">Файл не передан.</string>
+    <string name="session_preview_read_failed">Не удалось прочитать файл: %1$s</string>
+    <string name="session_preview_unsupported">Можно просматривать только отдельные чаты, экспортированные из Aether. exportType этого файла: «%1$s».</string>
+    <string name="session_preview_invalid">Этот файл не является корректным экспортом чата Aether.</string>
+    <string name="session_preview_action_unavailable">Недоступно в режиме просмотра</string>
 </resources>

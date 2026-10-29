@@ -962,4 +962,16 @@
     <string name="settings_extension_phase_reloading">بارگذاری مجدد افزونه‌ها…</string>
     <string name="settings_extension_phase_refreshing">به‌روزرسانی فهرست افزونه‌ها…</string>
     <string name="settings_extension_operation_elapsed">زمان سپری‌شده: %1$d ثانیه. بسته‌های بزرگ ممکن است چند دقیقه طول بکشند.</string>
+    <string name="session_preview_activity_label">پیش‌نمایش در Aether</string>
+    <string name="session_preview_title">پیش‌نمایش گفتگو</string>
+    <string name="session_preview_subtitle">فقط خواندنی · %1$d پیام · %2$s</string>
+    <string name="session_preview_save">ذخیره در گفتگوها</string>
+    <string name="session_preview_open_saved">باز کردن گفتگو</string>
+    <string name="session_preview_saved">در گفتگوها ذخیره شد</string>
+    <string name="session_preview_save_failed">ذخیره نشد: %1$s</string>
+    <string name="session_preview_no_file">فایلی دریافت نشد.</string>
+    <string name="session_preview_read_failed">خواندن فایل ممکن نشد: %1$s</string>
+    <string name="session_preview_unsupported">فقط گفتگوهای تکیِ خروجی‌گرفته از Aether قابل پیش‌نمایش هستند. exportType این فایل «%1$s» است.</string>
+    <string name="session_preview_invalid">این فایل خروجی معتبر گفتگوی Aether نیست.</string>
+    <string name="session_preview_action_unavailable">در پیش‌نمایش در دسترس نیست</string>
 </resources>
