@@ -75,7 +75,6 @@
             android:label="@string/session_preview_activity_label"
             android:launchMode="singleTop"
             android:taskAffinity=""
-            android:excludeFromRecents="true"
             android:theme="@style/Theme.Aether">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

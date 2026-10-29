@@ -1,6 +1,7 @@
 package com.zhousl.aether
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.app.Application
 import android.content.ActivityNotFoundException
 import android.content.ClipData
@@ -9,6 +10,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
@@ -91,6 +93,23 @@ class SessionPreviewActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.messages.collect { message -> showToast(message) }
         }
+        lifecycleScope.launch {
+            viewModel.state.collect { state ->
+                val title = (state as? SessionPreviewUiState.Loaded)?.session?.title?.takeIf { it.isNotBlank() }
+                if (title != null) showTitleInRecents(title)
+            }
+        }
+    }
+
+    /** Each preview is its own task; label its Recents card with the chat title. */
+    private fun showTitleInRecents(title: String) {
+        val description = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityManager.TaskDescription.Builder().setLabel(title).build()
+        } else {
+            @Suppress("DEPRECATION")
+            ActivityManager.TaskDescription(title)
+        }
+        setTaskDescription(description)
     }
 
     override fun onNewIntent(intent: Intent) {
