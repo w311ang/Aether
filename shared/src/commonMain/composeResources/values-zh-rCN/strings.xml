@@ -1103,4 +1103,7 @@
     <string name="session_preview_unsupported">只能预览从 Aether 导出的单个聊天。此文件的 exportType 为“%1$s”。</string>
     <string name="session_preview_invalid">这不是有效的 Aether 聊天导出文件。</string>
     <string name="session_preview_action_unavailable">预览中不可用</string>
+    <string name="session_preview_storage_permission_needed">发送方传来的是文件路径，需要允许存储访问，Aether 才能读取这个聊天。</string>
+    <string name="session_preview_grant_storage">允许存储访问</string>
+    <string name="session_preview_storage_permission_denied">未获得存储访问权限。可以改用“分享”把文件发给 Aether。</string>
 </resources>

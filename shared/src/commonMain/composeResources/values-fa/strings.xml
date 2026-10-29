@@ -974,4 +974,7 @@
     <string name="session_preview_unsupported">فقط گفتگوهای تکیِ خروجی‌گرفته از Aether قابل پیش‌نمایش هستند. exportType این فایل «%1$s» است.</string>
     <string name="session_preview_invalid">این فایل خروجی معتبر گفتگوی Aether نیست.</string>
     <string name="session_preview_action_unavailable">در پیش‌نمایش در دسترس نیست</string>
+    <string name="session_preview_storage_permission_needed">برنامهٔ فرستنده مسیر فایل را فرستاده است. برای خواندن این گفتگو، دسترسی به حافظه را به Aether بدهید.</string>
+    <string name="session_preview_grant_storage">اجازهٔ دسترسی به حافظه</string>
+    <string name="session_preview_storage_permission_denied">دسترسی به حافظه داده نشد. فایل را با «اشتراک‌گذاری» به Aether بفرستید.</string>
 </resources>

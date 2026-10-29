@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,6 +53,9 @@ internal sealed interface SessionPreviewUiState {
 
     data class Failed(val message: String) : SessionPreviewUiState
 
+    /** The sender passed a file:// path that Aether can only read with storage permission. */
+    data object NeedsStoragePermission : SessionPreviewUiState
+
     data class Loaded(
         val session: ChatSession,
         val sourceName: String,
@@ -66,6 +70,7 @@ internal fun SessionPreviewScreen(
     onClose: () -> Unit,
     onSave: () -> Unit,
     onOpenSavedChat: () -> Unit,
+    onGrantStoragePermission: () -> Unit,
     onOpenLink: (String) -> Unit,
     onCopyMessage: (ChatMessage) -> Unit,
     onUnavailableAction: () -> Unit,
@@ -119,6 +124,25 @@ internal fun SessionPreviewScreen(
                             .align(Alignment.Center)
                             .padding(horizontal = 32.dp),
                     )
+                }
+
+                SessionPreviewUiState.NeedsStoragePermission -> {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.session_preview_storage_permission_needed),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = AetherOnSurfaceVariant,
+                        )
+                        Button(onClick = onGrantStoragePermission) {
+                            Text(stringResource(R.string.session_preview_grant_storage))
+                        }
+                    }
                 }
 
                 is SessionPreviewUiState.Loaded -> {

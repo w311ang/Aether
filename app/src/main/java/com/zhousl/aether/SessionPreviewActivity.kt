@@ -1,19 +1,24 @@
 package com.zhousl.aether
 
+import android.Manifest
 import android.app.Application
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ContentResolver
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
+import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,6 +49,15 @@ import kotlinx.coroutines.withContext
 /** Opens an exported chat (`exportType: "session"`) from another app as a read-only conversation. */
 class SessionPreviewActivity : AppCompatActivity() {
     private val viewModel: SessionPreviewViewModel by viewModels()
+    private val storagePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            viewModel.reopen()
+        } else {
+            showToast(getString(R.string.session_preview_storage_permission_denied))
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,6 +77,9 @@ class SessionPreviewActivity : AppCompatActivity() {
                     onClose = ::finish,
                     onSave = viewModel::saveToChats,
                     onOpenSavedChat = ::openSavedChat,
+                    onGrantStoragePermission = {
+                        storagePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    },
                     onOpenLink = ::openLink,
                     onCopyMessage = ::copyMessage,
                     onUnavailableAction = { showToast(getString(R.string.session_preview_action_unavailable)) },
@@ -128,8 +145,15 @@ internal class SessionPreviewViewModel(application: Application) : AndroidViewMo
     val settings: StateFlow<AppSettings?> = runtime.settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    private var currentUri: Uri? = null
+
+    fun reopen() {
+        open(currentUri)
+    }
+
     fun open(uri: Uri?) {
         val app = getApplication<Application>()
+        currentUri = uri
         if (uri == null) {
             _state.value = SessionPreviewUiState.Failed(app.getString(R.string.session_preview_no_file))
             return
@@ -143,6 +167,9 @@ internal class SessionPreviewViewModel(application: Application) : AndroidViewMo
                         stream.bufferedReader(Charsets.UTF_8).readText()
                     }
                 }.getOrElse { throwable ->
+                    if (uri.scheme == ContentResolver.SCHEME_FILE && !hasStoragePermission()) {
+                        return@withContext SessionPreviewUiState.NeedsStoragePermission
+                    }
                     return@withContext SessionPreviewUiState.Failed(
                         app.getString(
                             R.string.session_preview_read_failed,
@@ -209,6 +236,11 @@ internal class SessionPreviewViewModel(application: Application) : AndroidViewMo
             )
         }
     }
+
+    private fun hasStoragePermission(): Boolean = ContextCompat.checkSelfPermission(
+        getApplication(),
+        Manifest.permission.READ_EXTERNAL_STORAGE,
+    ) == PackageManager.PERMISSION_GRANTED
 
     private fun displayName(uri: Uri): String {
         val resolver = getApplication<Application>().contentResolver

@@ -11,6 +11,8 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="com.termux.permission.RUN_COMMAND" />
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+    <!-- With targetSdk 28, file managers such as MT pass file:// paths to the chat preview. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <queries>
         <package android:name="com.termux" />
@@ -65,7 +67,10 @@
             </intent-filter>
         </activity>
 
-        <!-- Read-only preview of an exported chat (exportType "session") opened from another app. -->
+        <!--
+            Read-only preview of an exported chat (exportType "session") opened from another app.
+            text/plain is included because file managers such as MT send .json files as plain text.
+        -->
         <activity
             android:name=".SessionPreviewActivity"
             android:exported="true"
@@ -81,6 +86,7 @@
 
                 <data android:mimeType="application/json" />
                 <data android:mimeType="text/json" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -89,6 +95,7 @@
 
                 <data android:mimeType="application/json" />
                 <data android:mimeType="text/json" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
 

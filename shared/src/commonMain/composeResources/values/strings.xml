@@ -1105,4 +1105,7 @@
     <string name="session_preview_unsupported">Only single chats exported from Aether can be previewed. This file's exportType is “%1$s”.</string>
     <string name="session_preview_invalid">This file isn't a valid Aether chat export.</string>
     <string name="session_preview_action_unavailable">Not available in preview</string>
+    <string name="session_preview_storage_permission_needed">The sending app passed a file path. Allow storage access so Aether can read this chat.</string>
+    <string name="session_preview_grant_storage">Allow storage access</string>
+    <string name="session_preview_storage_permission_denied">Storage access wasn't granted. Try sharing the file to Aether instead.</string>
 </resources>

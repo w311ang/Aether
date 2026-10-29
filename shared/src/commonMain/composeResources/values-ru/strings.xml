@@ -2125,4 +2125,7 @@
     <string name="session_preview_unsupported">Можно просматривать только отдельные чаты, экспортированные из Aether. exportType этого файла: «%1$s».</string>
     <string name="session_preview_invalid">Этот файл не является корректным экспортом чата Aether.</string>
     <string name="session_preview_action_unavailable">Недоступно в режиме просмотра</string>
+    <string name="session_preview_storage_permission_needed">Приложение передало путь к файлу. Разрешите доступ к хранилищу, чтобы Aether смог прочитать этот чат.</string>
+    <string name="session_preview_grant_storage">Разрешить доступ к хранилищу</string>
+    <string name="session_preview_storage_permission_denied">Доступ к хранилищу не предоставлен. Попробуйте поделиться файлом с Aether.</string>
 </resources>
