@@ -975,7 +975,6 @@
     <string name="session_preview_invalid">این فایل خروجی معتبر گفتگوی Aether نیست.</string>
     <string name="session_preview_action_unavailable">در پیش‌نمایش در دسترس نیست</string>
     <string name="session_preview_folder_access_needed">برنامهٔ فرستنده مسیر فایل را فرستاده است. یک بار به پوشهٔ «%1$s» دسترسی بدهید تا گفتگوهای آن از این پس مستقیم باز شوند.</string>
-    <string name="session_preview_folder_access_restricted">فایل در «%1$s» است و Android اجازهٔ دسترسی به کل این پوشه را نمی‌دهد. فایل را انتخاب کنید یا گفتگوها را به یک زیرپوشه منتقل کنید.</string>
     <string name="session_preview_grant_folder">دسترسی به پوشه</string>
     <string name="session_preview_pick_file">انتخاب همین فایل</string>
     <string name="session_preview_folder_not_covering">پوشهٔ انتخاب‌شده این فایل را ندارد.</string>

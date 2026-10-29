@@ -1104,7 +1104,6 @@
     <string name="session_preview_invalid">这不是有效的 Aether 聊天导出文件。</string>
     <string name="session_preview_action_unavailable">预览中不可用</string>
     <string name="session_preview_folder_access_needed">发送方传来的是文件路径。授权一次“%1$s”文件夹，以后这个文件夹里的聊天都能直接打开。</string>
-    <string name="session_preview_folder_access_restricted">发送方传来的文件在“%1$s”里，系统不允许授权整个文件夹。可以选择这个文件来打开，或把聊天文件移到子文件夹。</string>
     <string name="session_preview_grant_folder">授权这个文件夹</string>
     <string name="session_preview_pick_file">只打开这个文件</string>
     <string name="session_preview_folder_not_covering">所选文件夹不包含这个文件。</string>

@@ -53,14 +53,8 @@ internal sealed interface SessionPreviewUiState {
 
     data class Failed(val message: String) : SessionPreviewUiState
 
-    /**
-     * The sender passed a file:// path outside every folder granted through the system picker.
-     * [canGrantFolder] is false when Android refuses to grant [folderName] itself (e.g. Download).
-     */
-    data class NeedsFileAccess(
-        val folderName: String,
-        val canGrantFolder: Boolean,
-    ) : SessionPreviewUiState
+    /** The sender passed a file:// path outside every folder granted through the system picker. */
+    data class NeedsFileAccess(val folderName: String) : SessionPreviewUiState
 
     data class Loaded(
         val session: ChatSession,
@@ -142,28 +136,15 @@ internal fun SessionPreviewScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         Text(
-                            text = stringResource(
-                                if (state.canGrantFolder) {
-                                    R.string.session_preview_folder_access_needed
-                                } else {
-                                    R.string.session_preview_folder_access_restricted
-                                },
-                                state.folderName,
-                            ),
+                            text = stringResource(R.string.session_preview_folder_access_needed, state.folderName),
                             style = MaterialTheme.typography.bodyLarge,
                             color = AetherOnSurfaceVariant,
                         )
-                        if (state.canGrantFolder) {
-                            Button(onClick = onGrantFolderAccess) {
-                                Text(stringResource(R.string.session_preview_grant_folder))
-                            }
-                            TextButton(onClick = onPickFile) {
-                                Text(stringResource(R.string.session_preview_pick_file))
-                            }
-                        } else {
-                            Button(onClick = onPickFile) {
-                                Text(stringResource(R.string.session_preview_pick_file))
-                            }
+                        Button(onClick = onGrantFolderAccess) {
+                            Text(stringResource(R.string.session_preview_grant_folder))
+                        }
+                        TextButton(onClick = onPickFile) {
+                            Text(stringResource(R.string.session_preview_pick_file))
                         }
                     }
                 }

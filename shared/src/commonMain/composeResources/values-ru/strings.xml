@@ -2126,7 +2126,6 @@
     <string name="session_preview_invalid">Этот файл не является корректным экспортом чата Aether.</string>
     <string name="session_preview_action_unavailable">Недоступно в режиме просмотра</string>
     <string name="session_preview_folder_access_needed">Приложение передало путь к файлу. Один раз предоставьте доступ к папке «%1$s», и чаты из неё будут открываться сразу.</string>
-    <string name="session_preview_folder_access_restricted">Файл находится в «%1$s», а Android не даёт доступ ко всей этой папке. Выберите файл, чтобы открыть его, или переместите чаты во вложенную папку.</string>
     <string name="session_preview_grant_folder">Дать доступ к папке</string>
     <string name="session_preview_pick_file">Выбрать этот файл</string>
     <string name="session_preview_folder_not_covering">Выбранная папка не содержит этот файл.</string>

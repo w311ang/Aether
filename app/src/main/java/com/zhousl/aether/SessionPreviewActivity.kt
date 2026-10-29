@@ -9,7 +9,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
@@ -32,7 +31,6 @@ import com.zhousl.aether.data.AppThemeMode
 import com.zhousl.aether.data.SessionPreviewParseResult
 import com.zhousl.aether.data.asImportedSession
 import com.zhousl.aether.data.isDocumentInTree
-import com.zhousl.aether.data.isRestrictedTreeDocumentId
 import com.zhousl.aether.data.parentDocumentId
 import com.zhousl.aether.data.parseSessionPreviewFile
 import com.zhousl.aether.data.primaryStorageDocumentId
@@ -293,7 +291,6 @@ internal class SessionPreviewViewModel(application: Application) : AndroidViewMo
         pendingFolderUri = DocumentsContract.buildDocumentUri(ExternalStorageAuthority, folderId)
         return SessionPreviewUiState.NeedsFileAccess(
             folderName = folderId.substringAfter(':').ifBlank { "/" },
-            canGrantFolder = !isRestrictedTreeDocumentId(folderId, Build.VERSION.SDK_INT),
         )
     }
 

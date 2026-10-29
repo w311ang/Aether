@@ -68,21 +68,6 @@ internal fun isDocumentInTree(documentId: String, treeDocumentId: String): Boole
 }
 
 /**
- * Android 11+ refuses to grant the storage root, Download itself, and Android/data or Android/obb
- * through the folder picker, so a file directly in those can only be picked one at a time.
- */
-internal fun isRestrictedTreeDocumentId(treeDocumentId: String, sdkInt: Int): Boolean {
-    if (sdkInt < 30) return false
-    val relativePath = treeDocumentId.substringAfter(':', missingDelimiterValue = treeDocumentId).trim('/')
-    return relativePath.isEmpty() ||
-        relativePath.equals("Download", ignoreCase = true) ||
-        relativePath.equals("Android/data", ignoreCase = true) ||
-        relativePath.startsWith("Android/data/", ignoreCase = true) ||
-        relativePath.equals("Android/obb", ignoreCase = true) ||
-        relativePath.startsWith("Android/obb/", ignoreCase = true)
-}
-
-/**
  * A copy of a previewed session that can be added to the chat list. It always gets a fresh id so
  * re-importing Aether's own export never overwrites the original chat.
  */

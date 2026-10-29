@@ -111,15 +111,6 @@ class SessionPreviewFileTest {
     }
 
     @Test
-    fun knowsWhichFoldersAndroid11RefusesToGrant() {
-        assertTrue(isRestrictedTreeDocumentId("primary:Download", sdkInt = 30))
-        assertTrue(isRestrictedTreeDocumentId("primary:", sdkInt = 36))
-        assertTrue(isRestrictedTreeDocumentId("primary:Android/data/com.example", sdkInt = 36))
-        assertFalse(isRestrictedTreeDocumentId("primary:Download/chats", sdkInt = 36))
-        assertFalse(isRestrictedTreeDocumentId("primary:Download", sdkInt = 29))
-    }
-
-    @Test
     fun importedSessionGetsFreshIdAndDropsRuntimeState() {
         val imported = session.asImportedSession(nowMillis = 1_800_000_000_000L)
 
