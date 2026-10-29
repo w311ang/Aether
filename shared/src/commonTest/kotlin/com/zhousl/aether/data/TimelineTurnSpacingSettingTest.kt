@@ -16,9 +16,9 @@ class TimelineTurnSpacingSettingTest {
 
     @Test
     fun settingsSavedBeforeTheOptionExistedUseStandardSpacing() {
-        val settings = parseAppSettings("""{"themeMode":"dark"}""")
+        val settings = parseAppSettings("""{"systemPrompt":"saved before the option existed"}""")
 
-        assertEquals(AppThemeMode.Dark, settings.themeMode)
+        assertEquals("saved before the option existed", settings.systemPrompt)
         assertEquals(DefaultTimelineTurnSpacingDp, settings.timelineTurnSpacingDp)
     }
 
