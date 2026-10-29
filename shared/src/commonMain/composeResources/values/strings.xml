@@ -1105,7 +1105,9 @@
     <string name="session_preview_unsupported">Only single chats exported from Aether can be previewed. This file's exportType is “%1$s”.</string>
     <string name="session_preview_invalid">This file isn't a valid Aether chat export.</string>
     <string name="session_preview_action_unavailable">Not available in preview</string>
-    <string name="session_preview_storage_permission_needed">The sending app passed a file path. Allow storage access so Aether can read this chat.</string>
-    <string name="session_preview_grant_storage">Allow storage access</string>
-    <string name="session_preview_storage_permission_denied">Storage access wasn't granted. Try sharing the file to Aether instead.</string>
+    <string name="session_preview_folder_access_needed">The sending app passed a file path. Grant access to the “%1$s” folder once, and chats in it will open directly from then on.</string>
+    <string name="session_preview_folder_access_restricted">The sending app passed a file path in “%1$s”, which Android doesn't let apps access as a whole folder. Pick the file to open it, or move chats into a subfolder.</string>
+    <string name="session_preview_grant_folder">Grant folder access</string>
+    <string name="session_preview_pick_file">Pick this file</string>
+    <string name="session_preview_folder_not_covering">The selected folder doesn't contain this file.</string>
 </resources>

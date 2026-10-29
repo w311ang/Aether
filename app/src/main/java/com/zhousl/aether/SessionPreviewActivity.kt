@@ -1,24 +1,26 @@
 package com.zhousl.aether
 
-import android.Manifest
+import android.app.Activity
 import android.app.Application
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
-import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,7 +31,11 @@ import com.zhousl.aether.data.AppSettings
 import com.zhousl.aether.data.AppThemeMode
 import com.zhousl.aether.data.SessionPreviewParseResult
 import com.zhousl.aether.data.asImportedSession
+import com.zhousl.aether.data.isDocumentInTree
+import com.zhousl.aether.data.isRestrictedTreeDocumentId
+import com.zhousl.aether.data.parentDocumentId
 import com.zhousl.aether.data.parseSessionPreviewFile
+import com.zhousl.aether.data.primaryStorageDocumentId
 import com.zhousl.aether.ui.ChatMessage
 import com.zhousl.aether.ui.SessionPreviewScreen
 import com.zhousl.aether.ui.SessionPreviewUiState
@@ -49,14 +55,13 @@ import kotlinx.coroutines.withContext
 /** Opens an exported chat (`exportType: "session"`) from another app as a read-only conversation. */
 class SessionPreviewActivity : AppCompatActivity() {
     private val viewModel: SessionPreviewViewModel by viewModels()
-    private val storagePermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        if (granted) {
-            viewModel.reopen()
-        } else {
-            showToast(getString(R.string.session_preview_storage_permission_denied))
-        }
+    private val folderAccessLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { treeUri ->
+        if (treeUri != null) viewModel.onFolderGranted(treeUri)
+    }
+    private val pickFileLauncher = registerForActivityResult(OpenDocumentInFolder()) { uri ->
+        if (uri != null) viewModel.open(uri)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,9 +82,8 @@ class SessionPreviewActivity : AppCompatActivity() {
                     onClose = ::finish,
                     onSave = viewModel::saveToChats,
                     onOpenSavedChat = ::openSavedChat,
-                    onGrantStoragePermission = {
-                        storagePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-                    },
+                    onGrantFolderAccess = { folderAccessLauncher.launch(viewModel.pendingFolderUri) },
+                    onPickFile = { pickFileLauncher.launch(viewModel.pendingFolderUri) },
                     onOpenLink = ::openLink,
                     onCopyMessage = ::copyMessage,
                     onUnavailableAction = { showToast(getString(R.string.session_preview_action_unavailable)) },
@@ -135,6 +139,20 @@ private fun Intent.sessionPreviewUri(): Uri? = when (action) {
     else -> data
 }
 
+private const val ExternalStorageAuthority = "com.android.externalstorage.documents"
+
+/** ACTION_OPEN_DOCUMENT that starts in the given folder, so the user only has to tap the file. */
+private class OpenDocumentInFolder : ActivityResultContract<Uri?, Uri?>() {
+    override fun createIntent(context: Context, input: Uri?): Intent =
+        Intent(Intent.ACTION_OPEN_DOCUMENT)
+            .addCategory(Intent.CATEGORY_OPENABLE)
+            .setType("*/*")
+            .apply { if (input != null) putExtra(DocumentsContract.EXTRA_INITIAL_URI, input) }
+
+    override fun parseResult(resultCode: Int, intent: Intent?): Uri? =
+        intent.takeIf { resultCode == Activity.RESULT_OK }?.data
+}
+
 internal class SessionPreviewViewModel(application: Application) : AndroidViewModel(application) {
     private val runtime = (application as AetherApplication).runtime
     private val _state = MutableStateFlow<SessionPreviewUiState>(SessionPreviewUiState.Loading)
@@ -147,7 +165,22 @@ internal class SessionPreviewViewModel(application: Application) : AndroidViewMo
 
     private var currentUri: Uri? = null
 
-    fun reopen() {
+    /** Folder of the last unreadable file:// path; the system pickers start there. */
+    var pendingFolderUri: Uri? = null
+        private set
+
+    fun onFolderGranted(treeUri: Uri) {
+        val app = getApplication<Application>()
+        runCatching {
+            app.contentResolver.takePersistableUriPermission(treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val documentId = currentUri?.path?.let(::primaryStorageDocumentId)
+        val coversCurrentFile = documentId != null &&
+            treeUri.authority == ExternalStorageAuthority &&
+            isDocumentInTree(documentId, DocumentsContract.getTreeDocumentId(treeUri))
+        if (!coversCurrentFile) {
+            _messages.tryEmit(app.getString(R.string.session_preview_folder_not_covering))
+        }
         open(currentUri)
     }
 
@@ -161,14 +194,15 @@ internal class SessionPreviewViewModel(application: Application) : AndroidViewMo
         _state.value = SessionPreviewUiState.Loading
         viewModelScope.launch {
             _state.value = withContext(Dispatchers.IO) {
-                val sourceName = displayName(uri)
+                val readableUri = grantedFolderDocumentUri(uri) ?: uri
+                val sourceName = displayName(readableUri)
                 val rawValue = runCatching {
-                    app.contentResolver.openInputStream(uri)?.use { stream ->
+                    app.contentResolver.openInputStream(readableUri)?.use { stream ->
                         stream.bufferedReader(Charsets.UTF_8).readText()
                     }
                 }.getOrElse { throwable ->
-                    if (uri.scheme == ContentResolver.SCHEME_FILE && !hasStoragePermission()) {
-                        return@withContext SessionPreviewUiState.NeedsStoragePermission
+                    if (readableUri.scheme == ContentResolver.SCHEME_FILE) {
+                        fileAccessState(readableUri)?.let { return@withContext it }
                     }
                     return@withContext SessionPreviewUiState.Failed(
                         app.getString(
@@ -237,10 +271,31 @@ internal class SessionPreviewViewModel(application: Application) : AndroidViewMo
         }
     }
 
-    private fun hasStoragePermission(): Boolean = ContextCompat.checkSelfPermission(
-        getApplication(),
-        Manifest.permission.READ_EXTERNAL_STORAGE,
-    ) == PackageManager.PERMISSION_GRANTED
+    /**
+     * Apps targeting SDK 28 (like Aether) receive file:// paths from file managers such as MT.
+     * Without storage permission those are readable only through a folder the user granted in the
+     * system picker, so look the path up in the persisted folder grants.
+     */
+    private fun grantedFolderDocumentUri(uri: Uri): Uri? {
+        if (uri.scheme != ContentResolver.SCHEME_FILE) return null
+        val documentId = uri.path?.let(::primaryStorageDocumentId) ?: return null
+        return getApplication<Application>().contentResolver.persistedUriPermissions
+            .asSequence()
+            .map { it.uri }
+            .filter { it.authority == ExternalStorageAuthority && DocumentsContract.isTreeUri(it) }
+            .firstOrNull { isDocumentInTree(documentId, DocumentsContract.getTreeDocumentId(it)) }
+            ?.let { DocumentsContract.buildDocumentUriUsingTree(it, documentId) }
+    }
+
+    private fun fileAccessState(uri: Uri): SessionPreviewUiState.NeedsFileAccess? {
+        val documentId = uri.path?.let(::primaryStorageDocumentId) ?: return null
+        val folderId = parentDocumentId(documentId) ?: return null
+        pendingFolderUri = DocumentsContract.buildDocumentUri(ExternalStorageAuthority, folderId)
+        return SessionPreviewUiState.NeedsFileAccess(
+            folderName = folderId.substringAfter(':').ifBlank { "/" },
+            canGrantFolder = !isRestrictedTreeDocumentId(folderId, Build.VERSION.SDK_INT),
+        )
+    }
 
     private fun displayName(uri: Uri): String {
         val resolver = getApplication<Application>().contentResolver

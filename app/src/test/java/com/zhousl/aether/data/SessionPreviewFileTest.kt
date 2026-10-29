@@ -83,6 +83,43 @@ class SessionPreviewFileTest {
     }
 
     @Test
+    fun mapsPrimaryStoragePathsToDocumentIds() {
+        assertEquals(
+            "primary:Download/Greeting.json",
+            primaryStorageDocumentId("/storage/emulated/0/Download/Greeting.json"),
+        )
+        assertEquals("primary:Download/chats/a.json", primaryStorageDocumentId("/sdcard/Download/chats/a.json"))
+        assertEquals("primary:a.json", primaryStorageDocumentId("/storage/self/primary/a.json"))
+        assertEquals(null, primaryStorageDocumentId("/storage/emulated/0/"))
+        assertEquals(null, primaryStorageDocumentId("/storage/1234-ABCD/a.json"))
+        assertEquals(null, primaryStorageDocumentId("/data/data/com.example/a.json"))
+    }
+
+    @Test
+    fun findsParentFolderDocumentId() {
+        assertEquals("primary:Download/chats", parentDocumentId("primary:Download/chats/a.json"))
+        assertEquals("primary:", parentDocumentId("primary:a.json"))
+    }
+
+    @Test
+    fun checksWhetherDocumentIsInsideGrantedFolder() {
+        assertTrue(isDocumentInTree("primary:Download/chats/a.json", "primary:Download/chats"))
+        assertTrue(isDocumentInTree("primary:Download/chats/old/a.json", "primary:Download/chats"))
+        assertTrue(isDocumentInTree("primary:Download/a.json", "primary:"))
+        assertFalse(isDocumentInTree("primary:Download/chats2/a.json", "primary:Download/chats"))
+        assertFalse(isDocumentInTree("primary:Documents/a.json", "primary:Download/chats"))
+    }
+
+    @Test
+    fun knowsWhichFoldersAndroid11RefusesToGrant() {
+        assertTrue(isRestrictedTreeDocumentId("primary:Download", sdkInt = 30))
+        assertTrue(isRestrictedTreeDocumentId("primary:", sdkInt = 36))
+        assertTrue(isRestrictedTreeDocumentId("primary:Android/data/com.example", sdkInt = 36))
+        assertFalse(isRestrictedTreeDocumentId("primary:Download/chats", sdkInt = 36))
+        assertFalse(isRestrictedTreeDocumentId("primary:Download", sdkInt = 29))
+    }
+
+    @Test
     fun importedSessionGetsFreshIdAndDropsRuntimeState() {
         val imported = session.asImportedSession(nowMillis = 1_800_000_000_000L)
 

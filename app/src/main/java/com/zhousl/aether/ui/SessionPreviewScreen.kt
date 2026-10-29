@@ -53,8 +53,14 @@ internal sealed interface SessionPreviewUiState {
 
     data class Failed(val message: String) : SessionPreviewUiState
 
-    /** The sender passed a file:// path that Aether can only read with storage permission. */
-    data object NeedsStoragePermission : SessionPreviewUiState
+    /**
+     * The sender passed a file:// path outside every folder granted through the system picker.
+     * [canGrantFolder] is false when Android refuses to grant [folderName] itself (e.g. Download).
+     */
+    data class NeedsFileAccess(
+        val folderName: String,
+        val canGrantFolder: Boolean,
+    ) : SessionPreviewUiState
 
     data class Loaded(
         val session: ChatSession,
@@ -70,7 +76,8 @@ internal fun SessionPreviewScreen(
     onClose: () -> Unit,
     onSave: () -> Unit,
     onOpenSavedChat: () -> Unit,
-    onGrantStoragePermission: () -> Unit,
+    onGrantFolderAccess: () -> Unit,
+    onPickFile: () -> Unit,
     onOpenLink: (String) -> Unit,
     onCopyMessage: (ChatMessage) -> Unit,
     onUnavailableAction: () -> Unit,
@@ -126,7 +133,7 @@ internal fun SessionPreviewScreen(
                     )
                 }
 
-                SessionPreviewUiState.NeedsStoragePermission -> {
+                is SessionPreviewUiState.NeedsFileAccess -> {
                     Column(
                         modifier = Modifier
                             .align(Alignment.Center)
@@ -135,12 +142,28 @@ internal fun SessionPreviewScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         Text(
-                            text = stringResource(R.string.session_preview_storage_permission_needed),
+                            text = stringResource(
+                                if (state.canGrantFolder) {
+                                    R.string.session_preview_folder_access_needed
+                                } else {
+                                    R.string.session_preview_folder_access_restricted
+                                },
+                                state.folderName,
+                            ),
                             style = MaterialTheme.typography.bodyLarge,
                             color = AetherOnSurfaceVariant,
                         )
-                        Button(onClick = onGrantStoragePermission) {
-                            Text(stringResource(R.string.session_preview_grant_storage))
+                        if (state.canGrantFolder) {
+                            Button(onClick = onGrantFolderAccess) {
+                                Text(stringResource(R.string.session_preview_grant_folder))
+                            }
+                            TextButton(onClick = onPickFile) {
+                                Text(stringResource(R.string.session_preview_pick_file))
+                            }
+                        } else {
+                            Button(onClick = onPickFile) {
+                                Text(stringResource(R.string.session_preview_pick_file))
+                            }
                         }
                     }
                 }
