@@ -745,6 +745,23 @@ private struct NativeGeneralSettingsView: View {
             } footer: {
                 Text(model.text("Use the system appearance or choose a fixed theme.", "跟随系统外观，或选择固定主题。"))
             }
+            Section {
+                Picker(model.text("Timeline spacing", "时间轴间距"), selection: timelineSpacingBinding) {
+                    Text(model.text("Compact", "紧凑", "فشرده", "Плотно")).tag(4)
+                    Text(model.text("Standard", "标准", "استاندارد", "Стандартно")).tag(8)
+                    Text(model.text("Relaxed", "宽松", "باز", "Свободно")).tag(12)
+                    Text(model.text("Wide", "很宽", "خیلی باز", "Широко")).tag(16)
+                }
+            } header: {
+                Text(model.text("Timeline spacing", "时间轴间距", "فاصلهٔ خط زمانی", "Интервал шкалы"))
+            } footer: {
+                Text(model.text(
+                    "Gap between turns when you press and hold the conversation timeline.",
+                    "按住对话时间轴展开后，相邻两轮之间的间距。",
+                    "فاصلهٔ بین نوبت‌ها هنگام نگه داشتن خط زمانی گفتگو.",
+                    "Расстояние между репликами, когда вы удерживаете шкалу беседы."
+                ))
+            }
         }
         .navigationTitle(model.text("General Settings", "通用设置"))
         .navigationBarTitleDisplayMode(.inline)
@@ -756,6 +773,13 @@ private struct NativeGeneralSettingsView: View {
 
     private var themeBinding: Binding<String> {
         Binding(get: { model.themeMode }, set: { model.patch(["themeMode": $0]) })
+    }
+
+    private var timelineSpacingBinding: Binding<Int> {
+        Binding(
+            get: { model.settingInt("timelineTurnSpacingDp", fallback: 8) },
+            set: { model.patch(["timelineTurnSpacingDp": $0]) }
+        )
     }
 
     private var languageLabel: String {

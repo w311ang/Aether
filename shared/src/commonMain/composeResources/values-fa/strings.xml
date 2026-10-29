@@ -978,4 +978,10 @@
     <string name="session_preview_grant_folder">دسترسی به پوشه</string>
     <string name="session_preview_pick_file">انتخاب همین فایل</string>
     <string name="session_preview_folder_not_covering">پوشهٔ انتخاب‌شده این فایل را ندارد.</string>
+    <string name="settings_timeline_spacing">فاصلهٔ خط زمانی</string>
+    <string name="settings_timeline_spacing_description">فاصلهٔ بین نوبت‌ها هنگام نگه داشتن خط زمانی گفتگو.</string>
+    <string name="timeline_spacing_compact">فشرده</string>
+    <string name="timeline_spacing_standard">استاندارد</string>
+    <string name="timeline_spacing_relaxed">باز</string>
+    <string name="timeline_spacing_wide">خیلی باز</string>
 </resources>

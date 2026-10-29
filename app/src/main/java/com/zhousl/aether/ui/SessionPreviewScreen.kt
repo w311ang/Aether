@@ -40,6 +40,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.zhousl.aether.R
+import com.zhousl.aether.data.DefaultTimelineTurnSpacingDp
 import com.zhousl.aether.ui.theme.AetherBackground
 import com.zhousl.aether.ui.theme.AetherBackgroundGradientTop
 import com.zhousl.aether.ui.theme.AetherOnSurface
@@ -75,6 +76,7 @@ internal fun SessionPreviewScreen(
     onOpenLink: (String) -> Unit,
     onCopyMessage: (ChatMessage) -> Unit,
     onUnavailableAction: () -> Unit,
+    timelineTurnSpacingDp: Int = DefaultTimelineTurnSpacingDp,
 ) {
     val loaded = state as? SessionPreviewUiState.Loaded
     Scaffold(
@@ -155,6 +157,7 @@ internal fun SessionPreviewScreen(
                         onOpenLink = onOpenLink,
                         onCopyMessage = onCopyMessage,
                         onUnavailableAction = onUnavailableAction,
+                        timelineTurnSpacingDp = timelineTurnSpacingDp,
                     )
                 }
             }
@@ -222,6 +225,7 @@ private fun SessionPreviewConversation(
     onOpenLink: (String) -> Unit,
     onCopyMessage: (ChatMessage) -> Unit,
     onUnavailableAction: () -> Unit,
+    timelineTurnSpacingDp: Int,
 ) {
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -315,6 +319,7 @@ private fun SessionPreviewConversation(
                 .fillMaxSize()
                 .padding(top = 8.dp, bottom = 30.dp)
                 .navigationBarsPadding(),
+            turnSpacing = timelineTurnSpacingDp.dp,
             onNavigate = { timelineIndex ->
                 timelineTargets.getOrNull(timelineIndex)?.let { target ->
                     scope.launch {

@@ -1031,6 +1031,7 @@ private fun AetherAppContent(
                     onDismissTermuxSetupNotice = viewModel::dismissTermuxSetupNotice,
                     onDismissStarterPromptHint = viewModel::dismissStarterPromptHint,
                             isSending = isCurrentSessionRunning,
+                            timelineTurnSpacingDp = uiState.settings.timelineTurnSpacingDp,
                         )
                     }
 
@@ -1059,6 +1060,7 @@ private fun AetherAppContent(
                     onCancelVirtualDisplayAuthorization = viewModel::cancelVirtualDisplayAuthorization,
                     language = language,
                     themeMode = uiState.settings.themeMode,
+                    timelineTurnSpacingDp = uiState.settings.timelineTurnSpacingDp,
                     defaultChatModelKey = uiState.settings.defaultChatModelKey,
                     defaultTitleModelKey = uiState.settings.defaultTitleModelKey,
                     defaultNamingModelKey = uiState.settings.defaultNamingModelKey,
@@ -1099,6 +1101,7 @@ private fun AetherAppContent(
                         AetherLocaleManager.apply(language)
                     },
                     onUpdateThemeMode = viewModel::updateAppThemeMode,
+                    onUpdateTimelineTurnSpacing = viewModel::updateTimelineTurnSpacing,
                     onUpsertProviderConfig = viewModel::upsertProviderConfig,
                     onRemoveProviderConfig = viewModel::removeProviderConfig,
                     onSetProviderEnabled = viewModel::setProviderEnabled,

@@ -4045,6 +4045,7 @@ fun IosComposeApp(
                         modelLimitsByProviderModel[sharedThinkingCatalogKey(it.piProviderId, it.modelId)]?.contextWindow
                     },
                     runtimeReady = sharedAppSettings.alpineSetupCompleted,
+                    timelineTurnSpacingDp = sharedAppSettings.timelineTurnSpacingDp,
                 )
                 }
                 }
@@ -5598,6 +5599,7 @@ private fun SharedChatScreen(
     useTabletLayout: Boolean,
     contextWindow: Int?,
     runtimeReady: Boolean,
+    timelineTurnSpacingDp: Int = com.zhousl.aether.data.DefaultTimelineTurnSpacingDp,
 ) {
     val isDuo by IosWorkspaceHost.isDuo.collectAsState()
     val fold = if (isDuo) IosWorkspaceHost.fold.collectAsState().value else com.zhousl.aether.platform.IosWorkspaceFold()
@@ -6217,6 +6219,7 @@ private fun SharedChatScreen(
                         top = topBarBodyHeight + 8.dp,
                         bottom = composerBodyHeight + 30.dp,
                     ),
+                    turnSpacing = timelineTurnSpacingDp.dp,
                     onNavigate = { timelineIndex ->
                         timelineTargets.getOrNull(timelineIndex)?.let { target ->
                             shouldAutoFollow = false
@@ -8866,6 +8869,8 @@ internal fun AppSettings.withNativeSettingsPatch(patch: JsonObject): AppSettings
         ?.let(com.zhousl.aether.data.AppLanguage::fromStorage) ?: language,
     themeMode = patch.nativeStringOrNull("themeMode")
         ?.let(com.zhousl.aether.data.AppThemeMode::fromStorage) ?: themeMode,
+    timelineTurnSpacingDp = patch.nativeInt("timelineTurnSpacingDp")
+        ?.let { com.zhousl.aether.data.normalizeTimelineTurnSpacingDp(it) } ?: timelineTurnSpacingDp,
     systemPrompt = patch.nativeStringOrNull("systemPrompt") ?: systemPrompt,
     llmInactivityReconnectTimeoutSeconds = patch.nativeInt("llmInactivityReconnectTimeoutSeconds")
         ?.let(::normalizeLlmInactivityReconnectTimeoutSeconds)

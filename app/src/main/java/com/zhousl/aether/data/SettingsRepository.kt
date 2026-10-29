@@ -196,6 +196,7 @@ class SettingsRepository(
             ),
             language = AppLanguage.fromStorage(preferences[LANGUAGE]),
             themeMode = AppThemeMode.fromStorage(preferences[THEME_MODE]),
+            timelineTurnSpacingDp = normalizeTimelineTurnSpacingDp(preferences[TIMELINE_TURN_SPACING_DP]),
             defaultChatModelKey = preferences[DEFAULT_CHAT_MODEL_KEY].orEmpty(),
             defaultTitleModelKey = preferences[DEFAULT_TITLE_MODEL_KEY].orEmpty(),
             defaultNamingModelKey = preferences[DEFAULT_NAMING_MODEL_KEY].orEmpty(),
@@ -503,6 +504,7 @@ class SettingsRepository(
             it[AGENT_MODE_AUTHORIZATION_METHOD] = settings.agentModeAuthorizationMethod.storageValue
             it[LANGUAGE] = settings.language.storageValue
             it[THEME_MODE] = settings.themeMode.storageValue
+            it[TIMELINE_TURN_SPACING_DP] = normalizeTimelineTurnSpacingDp(settings.timelineTurnSpacingDp)
             it[DEFAULT_CHAT_MODEL_KEY] = settings.defaultChatModelKey
             it[DEFAULT_TITLE_MODEL_KEY] = settings.defaultTitleModelKey
             it[DEFAULT_NAMING_MODEL_KEY] = settings.defaultNamingModelKey
@@ -545,6 +547,10 @@ class SettingsRepository(
         context.dataStore.edit { it[THEME_MODE] = themeMode.storageValue }
     }
 
+    suspend fun updateTimelineTurnSpacing(spacingDp: Int) {
+        context.dataStore.edit { it[TIMELINE_TURN_SPACING_DP] = normalizeTimelineTurnSpacingDp(spacingDp) }
+    }
+
     suspend fun updateUserSettings(settings: AppSettings) {
         context.dataStore.edit {
             it[SYSTEM_PROMPT] = settings.systemPrompt
@@ -563,6 +569,7 @@ class SettingsRepository(
                 serializeTermuxEnvironmentVariables(settings.termuxEnvironmentVariables)
             it[LANGUAGE] = settings.language.storageValue
             it[THEME_MODE] = settings.themeMode.storageValue
+            it[TIMELINE_TURN_SPACING_DP] = normalizeTimelineTurnSpacingDp(settings.timelineTurnSpacingDp)
         }
     }
 
@@ -722,6 +729,7 @@ class SettingsRepository(
             stringPreferencesKey("agent_mode_authorization_method")
         val LANGUAGE = stringPreferencesKey("language")
         val THEME_MODE = stringPreferencesKey("theme_mode")
+        val TIMELINE_TURN_SPACING_DP = intPreferencesKey("timeline_turn_spacing_dp")
         val DEFAULT_CHAT_MODEL_KEY = stringPreferencesKey("default_chat_model_key")
         val DEFAULT_TITLE_MODEL_KEY = stringPreferencesKey("default_title_model_key")
         val DEFAULT_NAMING_MODEL_KEY = stringPreferencesKey("default_naming_model_key")

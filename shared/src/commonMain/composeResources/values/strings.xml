@@ -1109,4 +1109,10 @@
     <string name="session_preview_grant_folder">Grant folder access</string>
     <string name="session_preview_pick_file">Pick this file</string>
     <string name="session_preview_folder_not_covering">The selected folder doesn't contain this file.</string>
+    <string name="settings_timeline_spacing">Timeline spacing</string>
+    <string name="settings_timeline_spacing_description">Gap between turns when you press and hold the conversation timeline.</string>
+    <string name="timeline_spacing_compact">Compact</string>
+    <string name="timeline_spacing_standard">Standard</string>
+    <string name="timeline_spacing_relaxed">Relaxed</string>
+    <string name="timeline_spacing_wide">Wide</string>
 </resources>

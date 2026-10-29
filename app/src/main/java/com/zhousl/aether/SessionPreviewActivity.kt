@@ -30,6 +30,7 @@ import androidx.lifecycle.viewModelScope
 import com.zhousl.aether.data.AppLanguage
 import com.zhousl.aether.data.AppSettings
 import com.zhousl.aether.data.AppThemeMode
+import com.zhousl.aether.data.DefaultTimelineTurnSpacingDp
 import com.zhousl.aether.data.SessionPreviewParseResult
 import com.zhousl.aether.data.asImportedSession
 import com.zhousl.aether.data.isDocumentInTree
@@ -87,6 +88,7 @@ class SessionPreviewActivity : AppCompatActivity() {
                     onOpenLink = ::openLink,
                     onCopyMessage = ::copyMessage,
                     onUnavailableAction = { showToast(getString(R.string.session_preview_action_unavailable)) },
+                    timelineTurnSpacingDp = settings?.timelineTurnSpacingDp ?: DefaultTimelineTurnSpacingDp,
                 )
             }
         }

@@ -52,6 +52,7 @@ import com.zhousl.aether.data.McpServerConfig
 import com.zhousl.aether.data.normalizeLlmInactivityReconnectTimeoutSeconds
 import com.zhousl.aether.data.normalizeLlmUserAgent
 import com.zhousl.aether.data.normalizeOldCommandHistoryRetentionHours
+import com.zhousl.aether.data.normalizeTimelineTurnSpacingDp
 import com.zhousl.aether.data.OnboardingStarterPrompt
 import com.zhousl.aether.data.PackageProfileState
 import com.zhousl.aether.data.RootSetupIssue
@@ -2488,6 +2489,16 @@ class AetherViewModel(
         }
         viewModelScope.launch {
             settingsRepository.updateThemeMode(themeMode)
+        }
+    }
+
+    fun updateTimelineTurnSpacing(spacingDp: Int) {
+        val normalized = normalizeTimelineTurnSpacingDp(spacingDp)
+        _uiState.update { current ->
+            current.copy(settings = current.settings.copy(timelineTurnSpacingDp = normalized))
+        }
+        viewModelScope.launch {
+            settingsRepository.updateTimelineTurnSpacing(normalized)
         }
     }
 
@@ -6034,6 +6045,7 @@ class AetherViewModel(
         put("agentModeAuthorizationMethod", agentModeAuthorizationMethod.storageValue)
         put("language", language.storageValue)
         put("themeMode", themeMode.storageValue)
+        put("timelineTurnSpacingDp", timelineTurnSpacingDp)
         put("defaultChatModelKey", defaultChatModelKey)
         put("defaultTitleModelKey", defaultTitleModelKey)
         put("defaultNamingModelKey", defaultNamingModelKey)
@@ -6147,6 +6159,9 @@ class AetherViewModel(
                 defaults.language,
             ),
             themeMode = AppThemeMode.fromStorage(json.optString("themeMode")),
+            timelineTurnSpacingDp = normalizeTimelineTurnSpacingDp(
+                json.optInt("timelineTurnSpacingDp", defaults.timelineTurnSpacingDp),
+            ),
             defaultChatModelKey = json.optString("defaultChatModelKey", defaults.defaultChatModelKey),
             defaultTitleModelKey = json.optString("defaultTitleModelKey", defaults.defaultTitleModelKey),
             defaultNamingModelKey = json.optString("defaultNamingModelKey", defaults.defaultNamingModelKey),

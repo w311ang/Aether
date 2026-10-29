@@ -173,6 +173,7 @@ import com.zhousl.aether.data.InstalledSkill
 import com.zhousl.aether.data.CreateExtensionSkillId
 import com.zhousl.aether.data.AppLanguage
 import com.zhousl.aether.data.AgentModeDisplayState
+import com.zhousl.aether.data.DefaultTimelineTurnSpacingDp
 import com.zhousl.aether.data.AlpineChromeViewerUrl
 import com.zhousl.aether.data.McpServerConfig
 import com.zhousl.aether.data.McpTransportConfig
@@ -383,6 +384,7 @@ fun ConversationScreen(
     onDismissTermuxSetupNotice: () -> Unit,
     onDismissStarterPromptHint: () -> Unit,
     isSending: Boolean,
+    timelineTurnSpacingDp: Int = DefaultTimelineTurnSpacingDp,
 ) {
     val scope = rememberCoroutineScope()
     val listState = rememberSaveable(
@@ -821,6 +823,7 @@ fun ConversationScreen(
                         top = topBarBodyHeight + 8.dp,
                         bottom = composerBodyHeight + animatedImeBottom + 30.dp,
                     ),
+                turnSpacing = timelineTurnSpacingDp.dp,
                 onNavigate = { timelineIndex ->
                     timelineTargets.getOrNull(timelineIndex)?.let { target ->
                         shouldAutoFollow = false

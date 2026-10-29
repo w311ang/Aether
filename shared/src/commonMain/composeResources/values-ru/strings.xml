@@ -2129,4 +2129,10 @@
     <string name="session_preview_grant_folder">Дать доступ к папке</string>
     <string name="session_preview_pick_file">Выбрать этот файл</string>
     <string name="session_preview_folder_not_covering">Выбранная папка не содержит этот файл.</string>
+    <string name="settings_timeline_spacing">Интервал шкалы</string>
+    <string name="settings_timeline_spacing_description">Расстояние между репликами, когда вы удерживаете шкалу беседы.</string>
+    <string name="timeline_spacing_compact">Плотно</string>
+    <string name="timeline_spacing_standard">Стандартно</string>
+    <string name="timeline_spacing_relaxed">Свободно</string>
+    <string name="timeline_spacing_wide">Широко</string>
 </resources>

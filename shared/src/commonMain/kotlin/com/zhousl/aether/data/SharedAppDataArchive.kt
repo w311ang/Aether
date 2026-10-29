@@ -357,6 +357,7 @@ private fun AppSettings.toAndroidAppSettingsJson(): JsonObject = buildJsonObject
     put("agentModeAuthorizationMethod", agentModeAuthorizationMethod.storageValue)
     put("language", language.storageValue)
     put("themeMode", themeMode.storageValue)
+    put("timelineTurnSpacingDp", timelineTurnSpacingDp)
     put("defaultChatModelKey", defaultChatModelKey)
     put("defaultTitleModelKey", defaultTitleModelKey)
     put("defaultNamingModelKey", defaultNamingModelKey)
@@ -464,6 +465,9 @@ private fun parseAndroidAppSettings(value: JsonObject): AppSettings {
         ),
         language = AppLanguage.fromStorage(value.stringValue("language"), defaults.language),
         themeMode = AppThemeMode.fromStorage(value.stringValue("themeMode")),
+        timelineTurnSpacingDp = normalizeTimelineTurnSpacingDp(
+            value.intValueOrDefault("timelineTurnSpacingDp", defaults.timelineTurnSpacingDp),
+        ),
         defaultChatModelKey = value.stringValueOrDefault(
             "defaultChatModelKey",
             defaults.defaultChatModelKey,

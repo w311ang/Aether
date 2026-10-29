@@ -1107,4 +1107,10 @@
     <string name="session_preview_grant_folder">授权这个文件夹</string>
     <string name="session_preview_pick_file">只打开这个文件</string>
     <string name="session_preview_folder_not_covering">所选文件夹不包含这个文件。</string>
+    <string name="settings_timeline_spacing">时间轴间距</string>
+    <string name="settings_timeline_spacing_description">按住对话时间轴展开后，相邻两轮之间的间距。</string>
+    <string name="timeline_spacing_compact">紧凑</string>
+    <string name="timeline_spacing_standard">标准</string>
+    <string name="timeline_spacing_relaxed">宽松</string>
+    <string name="timeline_spacing_wide">很宽</string>
 </resources>
